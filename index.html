@@ -1,435 +1,154 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <title>光栅衍射强度仿真</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Microsoft YaHei", Arial, sans-serif;
-        }
-
-        body {
-            background: #000;
-            color: #e2e8f0;
-            padding: 20px;
-        }
-
-        .title {
-            text-align: center;
-            font-size: 26px;
-            margin-bottom: 20px;
-            color: #f1f5f9;
-        }
-
-        /* 主显示区域：上下布局 */
-        .sim-box {
-            max-width: 920px;
-            margin: 0 auto;
-            background: #000;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.4);
-        }
-
-        /* 上方：强度曲线  */
-        .curve-box {
-            margin-bottom: 15px;
-        }
-        .curve-box h3 {
-            font-size: 17px;
-            margin-bottom: 10px;
-            color: #cbd5e1;
-            text-align: center;
-        }
-        canvas#curve {
-            width: 100%;
-            height: 320px;
-            background: #000;
-            border-radius: 6px;
-            display: block;
-        }
-
-        /* 下方：衍射光斑 */
-        .pattern-box {
-        width: 100%;
-        height: 140px; /* 改成和画布高度一致 */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden; /* 防止旋转后内容溢出 */
-    }
-
-        /* 控制面板 */
-        .panel {
-            max-width: 920px;
-            margin: 20px auto 0;
-            background: #000;
-            border-radius: 10px;
-            padding: 18px 25px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-        .item label {
-            width: 95px;
-            color: #e1e7ef;
-        }
-        input[type="range"] {
-            width: 140px;
-        }
-        .val {
-            min-width: 42px;
-            color: #94a3b8;
-            text-align: right;
-        }
-
-        /* 七色光 + 白光 */
-        .colors {
-            display: flex;
-            gap: 7px;
-            margin-top: 5px;
-        }
-        .cbtn {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            border: 2px solid #1e293b;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .cbtn.active {
-            transform: scale(1.18);
-            border-color: #38bdf8;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="多缝夫琅禾费衍射交互仿真">
+  <title>光栅衍射实验仿真</title>
+  <style>
+    :root{color-scheme:dark;--paper:#0f1317;--panel:#181d22;--line:#353d45;--text:#e2e6ea;--muted:#98a3ad;--accent:#4d9bc6;--good:#66ad7c;--warn:#c79a52;--bad:#c46c6c}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--text);font-family:"Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif}.app{width:min(1180px,calc(100% - 32px));margin:0 auto;padding:24px 0 36px}
+    header{border-bottom:2px solid #4a555f;padding:0 2px 14px;margin-bottom:14px}h1{margin:0;font-size:26px;font-weight:600;letter-spacing:.02em}header p{margin:5px 0 0;color:var(--muted);font-size:13px}
+    .grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px}.visual{padding:14px}.visual-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.visual-head h2,.controls h2{font-size:15px;margin:0;font-weight:600}.mode-label{font-size:12px;color:var(--muted);border-left:3px solid var(--accent);padding-left:7px}.sim-tabs{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:10px;border:1px solid #46515a}.sim-tabs button{border:0;background:#11161b;color:#aeb7bf;padding:9px 5px;cursor:pointer;font-size:13px}.sim-tabs button+button{border-left:1px solid #46515a}.sim-tabs button.active{background:#27495c;color:#eef6fa;font-weight:600}.sim-tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+    canvas{display:block;width:100%;background:#03070e;border:1px solid #3b4650}#curve{height:390px}#pattern{height:112px;margin-top:8px}.legend{min-height:28px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 14px;padding:7px 4px 0;font-size:11px;color:#aeb7bf}.legend i{display:inline-block;width:18px;height:2px;margin-right:5px;vertical-align:middle}.legend .line-key{padding-left:12px;border-left:1px solid var(--line)}.legend .dash{height:0;border-top:2px dashed #aeb7bf;background:none}
+    .controls{padding:14px}.controls h2{padding-bottom:9px;margin-bottom:13px;border-bottom:1px solid var(--line)}.field{margin-bottom:13px}.field.mode-hidden{display:none}.field-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}.field label{font-size:13px;color:#c8ced4}.value{font:600 13px ui-monospace,Consolas;color:#68b5dc}input[type=range]{width:100%;accent-color:var(--accent)}select{width:100%;border:1px solid #46515a;border-radius:2px;background:#11161b;color:var(--text);padding:7px 8px}
+    .spectral-options{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.wave{position:relative;border:1px solid #46515a;background:#11161b;color:#cdd3d8;padding:7px 2px 6px;cursor:pointer;font:12px ui-monospace,Consolas}.wave::before{content:"";display:block;height:4px;margin:-7px -2px 5px;background:var(--wave)}.wave.active{border-color:#7ab7d6;box-shadow:inset 0 0 0 1px #7ab7d6}.wave.active::after{content:"✓";position:absolute;right:3px;bottom:2px;font-family:Arial;font-size:10px}.wave:focus-visible{outline:2px solid var(--accent);outline-offset:1px}.wave:disabled{cursor:not-allowed}.spectral-options.disabled{opacity:.42;pointer-events:none}.hint{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.45}
+    .action{border:1px solid #46515a;background:#11161b;color:#c2c9cf;padding:8px;cursor:pointer;border-radius:2px}.actions{display:grid;grid-template-columns:1fr;gap:8px;margin-top:7px}.action:hover{border-color:var(--accent);color:#86c8e9}
+    .stats{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--panel)}.stat{padding:12px 14px}.stat+.stat{border-left:1px solid var(--line)}.stat b{display:block;color:var(--muted);font-size:12px;font-weight:400}.stat span{display:block;margin-top:4px;font-size:16px;font-weight:600}.stat span.math{font-family:"Times New Roman","Noto Serif",serif;font-size:19px;line-height:1.2;letter-spacing:.01em}.stat span.math i{font-weight:600}.stat span.math sub{font-size:.58em;font-style:normal;font-weight:400;vertical-align:-.28em;margin-left:.04em}.stat small{color:var(--muted);font-size:11px}
+    .assessment{grid-column:1/-1;padding:17px 20px 19px}.assessment-head{display:flex;align-items:baseline;padding-bottom:11px;border-bottom:1px solid var(--line)}.assessment-head h2{margin:0;font-size:16px;font-weight:600}.assessment-intro{margin:10px 0 3px;color:#b5bdc5;font-size:12px}.quiz-item{min-width:0;margin:0;padding:16px 0;border:0;border-bottom:1px solid #2c343b}.quiz-item.unanswered{box-shadow:inset 3px 0 0 var(--warn);padding-left:12px}.quiz-title{display:block;padding:0;margin:0 0 10px;color:var(--text);font-size:14px;line-height:1.55}.quiz-number{color:#6db5da;font:600 13px ui-monospace,Consolas;margin-right:7px}.quiz-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 10px}.quiz-option{display:flex;align-items:flex-start;gap:8px;min-height:44px;padding:9px 10px;border:1px solid #414a52;background:#12171c;color:#cbd1d6;cursor:pointer;font-size:12px;line-height:1.45}.quiz-option>span:first-of-type{min-width:0}.quiz-option:hover{border-color:#5d6973}.quiz-option input{flex:0 0 auto;margin:2px 0 0;accent-color:var(--accent)}.quiz-option.correct{border-color:var(--good);box-shadow:inset 3px 0 0 var(--good)}.quiz-option.incorrect{border-color:var(--bad);box-shadow:inset 3px 0 0 var(--bad)}.quiz-option input:disabled{opacity:.78}.answer-note{display:none;margin-left:auto;padding-left:8px;color:var(--muted);font-size:11px;white-space:nowrap}.quiz-option.correct .answer-note,.quiz-option.incorrect .answer-note{display:inline}.quiz-option.correct .answer-note{color:#8fc99f}.quiz-option.incorrect .answer-note{color:#dc9292}.quiz-explanation{margin:9px 0 0;padding-left:13px;border-left:2px solid #46515a;color:#aeb7bf;font-size:12px;line-height:1.55}.quiz-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:15px}.quiz-actions .action{min-width:116px;min-height:44px}.action.primary{border-color:#4d8fb4;background:#24495d;color:#edf6fa}.quiz-progress{margin-left:auto;color:var(--muted);font:12px ui-monospace,Consolas}.quiz-result{display:flex;align-items:center;gap:14px;margin-top:14px;padding:12px 14px;border-left:3px solid var(--accent);background:#11161b}.quiz-result[hidden]{display:none}.quiz-result.warning{border-left-color:var(--warn)}.quiz-result.pass{border-left-color:var(--good)}.quiz-score{font:600 24px ui-monospace,Consolas;color:#dce9ef;white-space:nowrap}.quiz-summary{margin:0;color:#b7c0c8;font-size:12px;line-height:1.55}
+    .foot{text-align:left;color:#7f8a94;font-size:11px;margin-top:10px}
+    @media(max-width:880px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){border-left:0;border-top:1px solid var(--line)}.stat:nth-child(4){border-top:1px solid var(--line)}#curve{height:340px}.quiz-options{grid-template-columns:1fr}}
+    @media(max-width:500px){.app{width:min(100% - 16px,1180px);padding-top:12px}h1{font-size:21px}.spectral-options{grid-template-columns:repeat(2,1fr)}#curve{height:300px}.stat span{font-size:14px}.assessment{padding:14px 12px}.assessment-head{align-items:flex-start;flex-direction:column;gap:3px}.quiz-progress{width:100%;margin-left:0}.quiz-actions .action{flex:1 1 calc(50% - 4px)}.quiz-result{align-items:flex-start;flex-direction:column;gap:5px}}
+  </style>
 </head>
-
 <body>
-    <div class="title">光栅衍射强度仿真</div>
-
-    <div class="sim-box">
-        <!--上方：强度曲线 -->
-        <div class="curve-box">
-            <h3>衍射光强分布曲线</h3>
-            <canvas id="curve" width="860" height="320"></canvas>
-        </div>
-
-        <!-- 下方：衍射光斑 -->
-        <div class="pattern-box">
-            <canvas id="pattern" width="140" height="860"style="transform: rotate(90deg); transform-origin: center;"></canvas>
-        </div>
+<main class="app">
+  <header><h1>光栅衍射实验仿真</h1><p>夫琅禾费衍射 · 多波长交互观察</p></header>
+  <section class="grid">
+    <div class="panel visual">
+      <div class="sim-tabs" id="simTabs" aria-label="仿真类型"><button type="button" data-mode="single" aria-pressed="false">单缝衍射</button><button type="button" data-mode="multi" aria-pressed="false">多缝干涉</button><button type="button" class="active" data-mode="grating" aria-pressed="true">光栅衍射</button></div>
+      <div class="visual-head"><h2 id="visualTitle">各波长光栅衍射强度</h2><span class="mode-label" id="modeLabel">光栅衍射 · 单色光</span></div>
+      <canvas id="curve" aria-label="不同波长的衍射强度曲线"></canvas>
+      <div class="legend" id="legend"></div>
+      <canvas id="pattern" aria-label="衍射光斑"></canvas>
     </div>
-
-    <!-- 控制面板 -->
-    <div class="panel">
-        <div class="item">
-            <label>光栅常数<br>d(μm)</label>
-            <input type="range" id="d" min="1" max="10" value="6" step="0.1">
-            <span class="val" id="d_val">6.0</span>
-        </div>
-        <div class="item">
-            <label>单缝宽度<br>a(μm)</label>
-            <input type="range" id="a" min="0.1" max="3" value="1" step="0.1">
-            <span class="val" id="a_val">1.0</span>
-        </div>
-        <div class="item">
-            <label>缝数<br>N</label>
-            <input type="range" id="N" min="2" max="50" value="5">
-            <span class="val" id="N_val">5</span>
-        </div>
-
-        <div style="width:100%;height:2px;"></div>
-
-        <div class="colors">
-            <div class="cbtn" style="background:#ff0000" data-r="255" data-g="0" data-b="0" data-lam="650"></div>
-            <div class="cbtn" style="background:#ff9900" data-r="255" data-g="153" data-b="0" data-lam="600"></div>
-            <div class="cbtn" style="background:#ffff00" data-r="255" data-g="255" data-b="0" data-lam="580"></div>
-            <div class="cbtn" style="background:#00ff00" data-r="0" data-g="255" data-b="0" data-lam="510"></div>
-            <div class="cbtn" style="background:#0099ff" data-r="0" data-g="153" data-b="255" data-lam="475"></div>
-            <div class="cbtn" style="background:#0000ff" data-r="0" data-g="0" data-b="255" data-lam="450"></div>
-            <div class="cbtn" style="background:#9900ff" data-r="153" data-g="0" data-b="255" data-lam="400"></div>
-            <div class="cbtn" style="background:#ffffff" data-r="255" data-g="255" data-b="255" ></div>
-        </div>
+    <aside class="panel controls">
+      <h2>实验参数</h2>
+      <div class="field"><div class="field-head"><label for="source">光源类型</label></div><select id="source"><option value="mono">单色光（可多选）</option><option value="white">等能连续白光</option></select></div>
+      <div class="field"><div class="field-head"><label>单色光波长</label><span class="value" id="selectedCount"></span></div><div class="spectral-options" id="waveOptions"></div><p class="hint" id="waveHint">至少保留一种波长。曲线和光斑按所选波长共同显示。</p></div>
+      <div class="field" id="DField"><div class="field-head"><label for="d" id="dLabel">光栅常数 <i>d</i></label><span class="value" id="dOut"></span></div><input id="d" type="range" min="1" max="10" value="6" step="0.1"></div>
+      <div class="field" id="AField"><div class="field-head"><label for="a">单缝宽度 <i>a</i></label><span class="value" id="aOut"></span></div><input id="a" type="range" min="0.1" max="3" value="1.2" step="0.1"></div>
+      <div class="field" id="NField"><div class="field-head"><label for="N">有效缝数 <i>N</i></label><span class="value" id="NOut"></span></div><input id="N" type="range" min="1" max="100" value="10" step="1"><p class="hint">曲线显示 <i>I</i>/<i>I</i>(0)；<i>N</i> 增大使主极大变窄，未显示绝对峰值的 <i>N</i><sup>2</sup> 增长。</p></div>
+      <div class="field"><div class="field-head"><label for="L" id="LLabel">光栅到光屏距离 <i>L</i></label><span class="value" id="LOut"></span></div><input id="L" type="range" min="0.2" max="2" value="1" step="0.01"><p class="hint">观察区域固定为宽 300 mm 的光屏。改变距离会直接改变屏上的条纹间距。</p></div>
+      <div class="actions"><button class="action" id="exportCsv">导出当前 CSV</button></div>
+    </aside>
+    <div class="stats">
+      <div class="stat"><b id="statParamLabel">缝宽 <i>a</i></b><span id="statParam"></span><small id="statParamNote">自动满足 <i>a</i> &lt; <i>d</i></small></div>
+      <div class="stat"><b id="statFirstLabel">一级主极大位置</b><span id="statFirst"></span><small id="statFirstX"></small></div>
+      <div class="stat"><b id="statOrdersLabel">单侧最高理论级次</b><span id="statOrders" class="math"></span><small id="statOrdersNote">由光屏边缘与光栅方程计算</small></div>
+      <div class="stat"><b id="statRLabel">一级分辨本领 <i>λ</i>/Δ<i>λ</i></b><span id="statR"></span><small id="statRNote"><i>R</i> = <i>kN</i>，取 <i>k</i> = 1</small></div>
     </div>
-
+    <section class="panel assessment" aria-labelledby="assessmentTitle">
+      <div class="assessment-head"><h2 id="assessmentTitle">光栅衍射知识评测</h2></div>
+      <p class="assessment-intro">每套试卷满分 100 分，题目与选项顺序随机。全部作答后提交评分。</p>
+      <form id="quizForm" novalidate>
+        <div id="quizList" class="quiz-list"></div>
+        <div class="quiz-actions"><button class="action primary" id="submitQuiz" type="submit">提交评分</button><button class="action" id="resetQuiz" type="button">重新作答</button><button class="action" id="newQuiz" type="button">换一套题</button><span class="quiz-progress" id="quizProgress" aria-live="polite">已作答 0/8</span></div>
+        <div class="quiz-result" id="quizResult" aria-live="polite" hidden></div>
+      </form>
+    </section>
+  </section>
+  <div class="foot">页面为自包含文件，部署后可直接通过浏览器访问。</div>
+</main>
 <script>
-    // ========== 画布 ==========
-    const curve = document.getElementById('curve');
-    const pattern = document.getElementById('pattern');
-    const ctxC = curve.getContext('2d');
-    const ctxP = pattern.getContext('2d');
-
-    // ========== 滑块 ==========
-    const dSlider = document.getElementById('d');
-    const aSlider = document.getElementById('a');
-    const NSlider = document.getElementById('N');
-    const dVal = document.getElementById('d_val');
-    const aVal = document.getElementById('a_val');
-    const NVal = document.getElementById('N_val');
-
-    // ========== 当前光色 ==========
-    let currentColor = { r:255, g:255, b:255 };
-
-    // 七种单色光数据（用于白光叠加）
-    const sevenColors = [
-        { r:255, g:0,   b:0,   lam:650 }, // 红
-        { r:255, g:153, b:0,   lam:600 }, // 橙
-        { r:255, g:255, b:0,   lam:580 }, // 黄
-        { r:0,   g:255, b:0,   lam:510 }, // 绿
-        { r:0,   g:153, b:255, lam:475 }, // 青
-        { r:0,   g:0,   b:255, lam:450 }, // 蓝
-        { r:153, g:0,   b:255, lam:400 }  // 紫
-    ];
-
-    // ========== 角度范围 ==========
-    const thetaMin = -0.26;
-    const thetaMax = 0.26;
-
-    // ========== 获取参数 ==========
-    function getParams(lam = currentColor.lam) {
-        return {
-            d: parseFloat(dSlider.value) * 1e-6,
-            a: parseFloat(aSlider.value) * 1e-6,
-            N: parseInt(NSlider.value),
-            lam: lam * 1e-9
-        };
+(() => {
+  'use strict';
+  const $=id=>document.getElementById(id), curve=$('curve'),pattern=$('pattern'),cctx=curve.getContext('2d'),pctx=pattern.getContext('2d');
+  const els={source:$('source'),d:$('d'),a:$('a'),N:$('N'),L:$('L')};
+  const monoPresets=[405,450,488,532,589.3,632.8,650],whiteComponents=[400,450,500,550,600,650,700],whiteSpectrum=Array.from({length:81},(_,i)=>380+5*i);
+  const selected=new Set([632.8]);const screenHalfWidthMm=150,plotFrame=Object.freeze({left:62,right:18});let simMode='grating',renderPending=false;
+  const questionBank=[
+    {question:'光栅第 <i>k</i> 级主极大的方向满足哪一关系？',options:['<i>d</i> sin <i>θ</i> = <i>kλ</i>','<i>a</i> sin <i>θ</i> = <i>kλ</i>','<i>d</i> cos <i>θ</i> = <i>kλ</i>','<i>d</i> tan <i>θ</i> = <i>kλ</i>'],answer:0,explanation:'相邻缝到该方向的光程差为 <i>d</i> sin <i>θ</i>；它等于整数倍波长时形成主极大。'},
+    {question:'保持光栅常数 <i>d</i>、级次 <i>k</i> 和光屏距离 <i>L</i> 不变，在该级次仍存在的前提下，增大波长 <i>λ</i> 后，主极大在屏上怎样移动？',options:['向中央靠近','远离中央','位置不变','一定消失'],answer:1,explanation:'由 <i>d</i> sin <i>θ</i> = <i>kλ</i> 可知波长越长，衍射角越大，因此屏上位置的绝对值也越大。'},
+    {question:'在归一化强度曲线中增大有效缝数 <i>N</i>，中央主极大最主要的变化是什么？',options:['变宽，峰值仍为 1','变窄，峰值仍为 1','间距增大，宽度不变','单缝包络变窄'],answer:1,explanation:'增大 <i>N</i> 会使主极大变窄、分辨本领提高；归一化后中央峰仍为 1，未归一化峰值则按 <i>N</i><sup>2</sup> 增长。'},
+    {question:'光栅衍射的归一化强度应由哪两部分共同决定？',options:['单缝衍射因子与多缝干涉因子的乘积','单缝衍射因子与多缝干涉因子的和','单缝衍射因子除以多缝干涉因子','只由多缝干涉因子决定'],answer:0,explanation:'有限缝宽产生单缝衍射包络，多缝排列产生干涉细峰；完整光栅强度是两者的乘积。'},
+    {question:'仅按缺级条件判断，若缝宽与光栅常数之比 <i>a</i>/<i>d</i> = 1/4，则首个可能缺失的主极大是哪个级次？',options:['<i>k</i> = 1','<i>k</i> = 2','<i>k</i> = 4','<i>k</i> = 5'],answer:2,explanation:'当 <i>ka</i>/<i>d</i> 为非零整数时，干涉主极大恰好落在单缝暗纹处。这里最小满足条件的是 <i>k</i> = 4；该级次还须满足光栅方程的存在条件。'},
+    {question:'改变光栅到光屏距离 <i>L</i>，但保持 <i>d</i>、<i>λ</i> 不变，下列说法正确的是？',options:['衍射角和屏上位置都增大','衍射角不变，屏上位置随 <i>L</i> 增大','衍射角和屏上位置都不变','衍射角减小，屏上位置增大'],answer:1,explanation:'衍射角由光栅方程决定，与 <i>L</i> 无关；屏上位置满足 <i>x</i> = <i>L</i> tan <i>θ</i>。'},
+    {question:'等能连续白光照射光栅时，在同一级光谱中通常可以观察到什么规律？',options:['红光比紫光离中央更远，零级重合','紫光比红光离中央更远，零级重合','各种波长的同级位置完全相同','中央零级不存在'],answer:0,explanation:'同一非零级次中，长波对应更大的衍射角；各波长的零级均在 <i>θ</i> = 0 处重合。'},
+    {question:'某光栅的有效缝数 <i>N</i> = 60，在一级光谱中理想分辨本领 <i>R</i> 为多少？',options:['1','<i>k</i>','60','3600'],answer:2,explanation:'光栅分辨本领 <i>R</i> = <i>kN</i>。取一级 <i>k</i> = 1，可得 <i>R</i> = 60。'},
+    {question:'光屏半宽为 <i>X</i>，边缘方向为 <i>θ</i><sub>e</sub> = arctan(<i>X</i>/<i>L</i>)。单色光在单侧光屏内的最高主极大级次应怎样计算？',options:['⌊<i>d</i> sin <i>θ</i><sub>e</sub>/<i>λ</i>⌋','⌊<i>d</i>/<i>λ</i>⌋','⌊<i>λ</i> sin <i>θ</i><sub>e</sub>/<i>d</i>⌋','⌊<i>Ld</i>/<i>λ</i>⌋'],answer:0,explanation:'光屏只能接收到 |<i>θ</i>| ≤ <i>θ</i><sub>e</sub> 的光，因此应将光栅方程在屏边缘处取整。'},
+    {question:'保持 <i>λ</i>、<i>L</i> 不变并增大光栅常数 <i>d</i>，同一级主极大如何变化？',options:['衍射角增大，条纹间距增大','衍射角减小，条纹间距减小','衍射角不变，条纹变窄','衍射角增大，条纹间距减小'],answer:1,explanation:'由 sin <i>θ</i> = <i>kλ</i>/<i>d</i> 可知，<i>d</i> 增大时同级衍射角减小，屏上的级次间距也随之减小。'},
+    {question:'单色光或白光照射光栅时，零级主极大具有哪一共同特征？',options:['满足 <i>θ</i> = 0，各波长位置重合','只允许红光出现','位置随 <i>d</i> 增大而移动','一定被单缝包络消除'],answer:0,explanation:'取 <i>k</i> = 0 时，光栅方程给出 <i>θ</i> = 0；所有波长的零级位置相同，且不会形成非零级的色散。'},
+    {question:'单缝宽度为 <i>a</i> 时，单缝衍射包络的一级暗纹满足什么条件？',options:['<i>a</i> sin <i>θ</i> = <i>λ</i>','<i>d</i> sin <i>θ</i> = <i>λ</i>','<i>a</i> cos <i>θ</i> = <i>λ</i>','<i>a</i> tan <i>θ</i> = <i>λ</i>'],answer:0,explanation:'单缝暗纹条件为 <i>a</i> sin <i>θ</i> = <i>jλ</i>。一级暗纹取 <i>j</i> = 1。'},
+    {question:'一块光栅刻线密度为 600 条/mm，其光栅常数 <i>d</i> 最接近多少？',options:['0.60 μm','1.00 μm','1.67 μm','6.00 μm'],answer:2,explanation:'<i>d</i> 是相邻刻线间距，<i>d</i> = 1/(600 mm<sup>−1</sup>) = 1/600 mm ≈ 1.67 μm。'},
+    {question:'理想 <i>N</i> 缝干涉（<i>N</i> ≥ 2）中，相邻两个主极大之间有多少个次极大？',options:['<i>N</i> − 2','<i>N</i> − 1','<i>N</i>','2<i>N</i> − 1'],answer:0,explanation:'相邻主极大之间有 <i>N</i> − 1 个极小和 <i>N</i> − 2 个次极大。'},
+    {question:'当有效缝数 <i>N</i> = 1 时，多缝干涉因子呈现什么结果？',options:['处处为 1，不再形成多缝干涉细峰','只剩奇数级主极大','主极大宽度趋于零','所有位置强度均为零'],answer:0,explanation:'只有一个缝时不存在缝间相位差的叠加，多缝干涉因子退化为常数 1。'},
+    {question:'保持 <i>d</i>、<i>N</i> 和 <i>λ</i> 不变，减小缝宽 <i>a</i> 会怎样影响单缝衍射包络？',options:['包络变宽，可容纳更多干涉主极大','包络变窄，可容纳更少干涉主极大','包络宽度不变','主极大间距增大'],answer:0,explanation:'单缝一级暗纹满足 sin <i>θ</i> = <i>λ</i>/<i>a</i>；减小 <i>a</i> 会使暗纹外移，包络变宽。'},
+    {question:'若各缝入射振幅相同且观察中央方向，未归一化的中央主极大强度随缝数 <i>N</i> 怎样变化？',options:['与 <i>N</i> 成正比','与 <i>N</i><sup>2</sup> 成正比','与 1/<i>N</i> 成正比','与 <i>N</i> 无关'],answer:1,explanation:'中央方向各缝振幅同相相加，总振幅为单缝的 <i>N</i> 倍，因此强度为 <i>N</i><sup>2</sup> 倍。'},
+    {question:'光栅在第 <i>k</i> 级附近的分辨本领为 <i>R</i> = <i>kN</i>。波长为 <i>λ</i> 时，最小可分辨波长差 Δ<i>λ</i> 为多少？',options:['<i>kNλ</i>','<i>λ</i>/(<i>kN</i>)','<i>kλ</i>/<i>N</i>','<i>Nλ</i>/<i>k</i>'],answer:1,explanation:'由 <i>R</i> = <i>λ</i>/Δ<i>λ</i> = <i>kN</i> 可得 Δ<i>λ</i> = <i>λ</i>/(<i>kN</i>)。'},
+    {question:'第 <i>k</i> 级光栅主极大要出现在有限衍射角内，必须满足哪一限制？',options:['|<i>kλ</i>/<i>d</i>| &lt; 1','|<i>kd</i>/<i>λ</i>| &lt; 1','<i>k</i> 必须为正数','<i>λ</i> 必须大于 <i>d</i>'],answer:0,explanation:'因为 sin <i>θ</i> = <i>kλ</i>/<i>d</i>，有限角度的主极大要求其绝对值小于 1；<i>k</i> 可为正、负或零。'},
+    {question:'在小角度条件下，第 <i>k</i> 级主极大的屏上位置近似式是哪一个？',options:['<i>x</i><sub>k</sub> ≈ <i>Lkλ</i>/<i>d</i>','<i>x</i><sub>k</sub> ≈ <i>dk</i>/(<i>Lλ</i>)','<i>x</i><sub>k</sub> ≈ <i>Ld</i>/(<i>kλ</i>)','<i>x</i><sub>k</sub> ≈ <i>kλ</i>/(<i>Ld</i>)'],answer:0,explanation:'小角度时 sin <i>θ</i> ≈ tan <i>θ</i> ≈ <i>θ</i>，结合 <i>x</i> = <i>L</i> tan <i>θ</i> 得 <i>x</i><sub>k</sub> ≈ <i>Lkλ</i>/<i>d</i>。'}
+  ];
+  const quizSize=8,quizState=[];let quizQuestions=[];
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  function sinc(x){const ax=Math.abs(x);return ax<1e-5?1-x*x/6+x*x*x*x/120:Math.sin(x)/x}
+  function gratingRatio(v,N){const s=Math.sin(v);return Math.abs(s)<1e-9?N:Math.sin(N*v)/s}
+  function diffractionEnvelope(theta,p,lambdaNm){const lam=lambdaNm*1e-9,alpha=Math.PI*p.a*Math.sin(theta)/lam;return sinc(alpha)**2}
+  function interferenceIntensity(theta,p,lambdaNm){const lam=lambdaNm*1e-9,v=Math.PI*p.d*Math.sin(theta)/lam,q=gratingRatio(v,p.N)/p.N;return q*q}
+  function gratingIntensity(theta,p,lambdaNm){return diffractionEnvelope(theta,p,lambdaNm)*interferenceIntensity(theta,p,lambdaNm)}
+  function displayedIntensity(theta,p,lambdaNm){if(simMode==='single')return diffractionEnvelope(theta,p,lambdaNm);if(simMode==='multi')return interferenceIntensity(theta,p,lambdaNm);return gratingIntensity(theta,p,lambdaNm)}
+  function wavelengthRgb(lam){let r=0,g=0,b=0;if(lam>=380&&lam<440){r=-(lam-440)/60;b=1}else if(lam<490){g=(lam-440)/50;b=1}else if(lam<510){g=1;b=-(lam-510)/20}else if(lam<580){r=(lam-510)/70;g=1}else if(lam<645){r=1;g=-(lam-645)/65}else if(lam<=780){r=1}let f=1;if(lam<420)f=.3+.7*(lam-380)/40;else if(lam>700)f=.3+.7*(780-lam)/80;return [r*f,g*f,b*f]}
+  function rgbCss(lam,a=1){const c=wavelengthRgb(lam).map(x=>Math.round(255*x));return a===1?`rgb(${c.join(',')})`:`rgba(${c.join(',')},${a})`}
+  function params(){return {d:+els.d.value*1e-6,a:+els.a.value*1e-6,N:+els.N.value,L:+els.L.value,white:els.source.value==='white',lambdas:els.source.value==='white'?whiteComponents:[...selected].sort((a,b)=>a-b)}}
+  function thetaAtScreen(xMm,p){return Math.atan((xMm/1000)/p.L)}
+  function curveSampleCount(p){if(simMode==='single')return 2401;const minLam=Math.min(...p.lambdas)*1e-9,needed=Math.ceil(2.4*p.N*p.d/(p.L*minLam)),bounded=Math.min(30001,Math.max(2401,needed));return bounded%2?bounded:bounded+1}
+  function curvePositions(p,count){const sampleCount=count||curveSampleCount(p),positions=[];for(let i=0;i<sampleCount;i++)positions.push(-screenHalfWidthMm+2*screenHalfWidthMm*i/(sampleCount-1));positions.push(...principalPeakPositions(p));positions.sort((a,b)=>a-b);return positions.filter((x,i)=>i===0||Math.abs(x-positions[i-1])>1e-9)}
+  function curveData(p,count){const comps=p.lambdas.map(lam=>({lam,points:[]})),positions=curvePositions(p,count);let maxI=0;for(const x of positions){const theta=thetaAtScreen(x,p);for(const c of comps){const raw=displayedIntensity(theta,p,c.lam),envelopeRaw=diffractionEnvelope(theta,p,c.lam);c.points.push({theta,x,raw,envelopeRaw});maxI=Math.max(maxI,raw)}}maxI=Math.max(maxI,1e-15);for(const c of comps)for(const q of c.points){q.I=q.raw/maxI;q.envelope=q.envelopeRaw/maxI}return comps}
+  function principalPeakPositions(p,lambdas=p.lambdas){if(simMode==='single')return [];const positions=[];for(const lamNm of lambdas){const step=lamNm*1e-9/p.d,maxOrder=Math.floor(1/step);for(let k=-maxOrder;k<=maxOrder;k++){const s=k*step;if(Math.abs(s)>=1)continue;const x=p.L*Math.tan(Math.asin(s))*1000;if(Math.abs(x)<=screenHalfWidthMm)positions.push(x)}}positions.sort((a,b)=>a-b);return positions.filter((x,i)=>i===0||Math.abs(x-positions[i-1])>1e-9)}
+  function compositeRgb(theta,p){let r=0,g=0,b=0;for(const l of p.white?whiteSpectrum:p.lambdas){const I=displayedIntensity(theta,p,l),c=wavelengthRgb(l);r+=I*c[0];g+=I*c[1];b+=I*c[2]}return {r,g,b}}
+  function fitCanvas(canvas,ctx){const r=canvas.getBoundingClientRect(),dpr=Math.min(2,devicePixelRatio||1),w=Math.max(1,Math.round(r.width*dpr)),h=Math.max(1,Math.round(r.height*dpr));if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}ctx.setTransform(dpr,0,0,dpr,0,0);return {w:r.width,h:r.height,dpr}}
+  function line(ctx,x1,y1,x2,y2,color,width=1){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+  function drawCurve(p,comps){const {w,h}=fitCanvas(curve,cctx),pad={l:plotFrame.left,r:plotFrame.right,t:20,b:42},pw=w-pad.l-pad.r,ph=h-pad.t-pad.b,xMin=-screenHalfWidthMm,xMax=screenHalfWidthMm;cctx.clearRect(0,0,w,h);cctx.fillStyle='#03070e';cctx.fillRect(0,0,w,h);cctx.font='12px system-ui';cctx.textAlign='right';cctx.textBaseline='middle';for(let j=0;j<=5;j++){const y=pad.t+ph*j/5;line(cctx,pad.l,y,w-pad.r,y,'#17243a');cctx.fillStyle='#8293aa';cctx.fillText((1-j/5).toFixed(1),pad.l-9,y)}cctx.save();cctx.translate(13,pad.t+ph/2);cctx.rotate(-Math.PI/2);cctx.fillStyle='#aab8ca';cctx.textAlign='center';cctx.textBaseline='middle';cctx.fillText('归一化光强 𝐼 / 𝐼(0)',0,0);cctx.restore();cctx.textAlign='center';cctx.textBaseline='top';for(let j=0;j<=6;j++){const x=pad.l+pw*j/6,val=xMin+(xMax-xMin)*j/6;line(cctx,x,pad.t,x,pad.t+ph,'#111d30');cctx.fillStyle='#8293aa';cctx.fillText(val.toFixed(0),x,pad.t+ph+8)}cctx.fillStyle='#aab8ca';cctx.fillText('光屏位置 𝑥 / mm',pad.l+pw/2,h-16);
+    if(simMode==='grating'){cctx.save();cctx.setLineDash([6,5]);for(const c of comps){cctx.strokeStyle=rgbCss(c.lam,.55);cctx.lineWidth=1.25;cctx.beginPath();c.points.forEach((q,i)=>{const x=pad.l+pw*(q.x-xMin)/(xMax-xMin),y=pad.t+ph*(1-q.envelope);i?cctx.lineTo(x,y):cctx.moveTo(x,y)});cctx.stroke()}cctx.restore()}
+    for(const c of comps){cctx.strokeStyle=rgbCss(c.lam);cctx.lineWidth=1.7;cctx.beginPath();c.points.forEach((q,i)=>{const x=pad.l+pw*(q.x-xMin)/(xMax-xMin),y=pad.t+ph*(1-q.I);i?cctx.lineTo(x,y):cctx.moveTo(x,y)});cctx.stroke()}
+  }
+  function drawPattern(p){const {w,h,dpr}=fitCanvas(pattern,pctx),W=Math.round(w*dpr),H=Math.round(h*dpr),img=pctx.createImageData(W,H),center=compositeRgb(0,p),scale=Math.max(center.r,center.g,center.b,1e-12),peakXs=principalPeakPositions(p,p.white?whiteSpectrum:p.lambdas),leftBoundary=plotFrame.left*dpr,rightBoundary=(w-plotFrame.right)*dpr,plotWidth=Math.max(1,rightBoundary-leftBoundary),firstColumn=Math.max(0,Math.ceil(leftBoundary-.5)),lastColumn=Math.min(W-1,Math.floor(rightBoundary-.5)),dx=2*screenHalfWidthMm/plotWidth;for(let k=3;k<img.data.length;k+=4)img.data[k]=255;let peakIndex=0;for(let X=firstColumn;X<=lastColumn;X++){const x=-screenHalfWidthMm+2*screenHalfWidthMm*((X+.5-leftBoundary)/plotWidth),left=x-dx/2,right=x+dx/2,theta=thetaAtScreen(x,p);while(peakIndex<peakXs.length&&peakXs[peakIndex]<left)peakIndex++;let q=compositeRgb(theta,p),j=peakIndex;while(j<peakXs.length&&peakXs[j]<=right){const peakRgb=compositeRgb(thetaAtScreen(peakXs[j],p),p);q={r:Math.max(q.r,peakRgb.r),g:Math.max(q.g,peakRgb.g),b:Math.max(q.b,peakRgb.b)};j++}const rr=Math.pow(clamp(q.r/scale,0,1),.55),gg=Math.pow(clamp(q.g/scale,0,1),.55),bb=Math.pow(clamp(q.b/scale,0,1),.55);for(let Y=0;Y<H;Y++){const edge=.72+.28*Math.sin(Math.PI*Y/Math.max(1,H-1)),k=(Y*W+X)*4;img.data[k]=255*rr*edge;img.data[k+1]=255*gg*edge;img.data[k+2]=255*bb*edge}}pctx.setTransform(1,0,0,1,0,0);pctx.putImageData(img,0,0)}
+  function updateLegend(p){let factorKey='<span class="line-key">实线：单缝衍射强度</span>';if(simMode==='multi')factorKey='<span class="line-key">实线：多缝干涉因子</span>';if(simMode==='grating')factorKey='<span class="line-key"><i class="dash"></i>虚线：单缝衍射包络</span>';$('legend').innerHTML=p.lambdas.map(l=>`<span><i style="background:${rgbCss(l)}"></i>${l} nm</span>`).join('')+factorKey+(p.white?'<span>（等能代表波长；光斑按 5 nm 连续积分）</span>':'')}
+  function featureAtFirstOrder(lambdaNm,p,period){const s=lambdaNm*1e-9/period;if(s>=1)return null;const theta=Math.asin(s);return {theta,x:p.L*Math.tan(theta)*1000}}
+  function rangeText(values,digits=2){if(!values.length)return '不存在';const lo=Math.min(...values),hi=Math.max(...values);return Math.abs(hi-lo)<1e-9?lo.toFixed(digits):lo.toFixed(digits)+'–'+hi.toFixed(digits)}
+  function floorOrder(value){return Math.max(0,Math.floor(value+1e-10))}
+  function syncAConstraint(){const limit=simMode==='grating'?Math.min(3,+els.d.value-.1):3,stepped=Math.max(.1,Math.round(limit*10)/10);els.a.max=stepped;if(+els.a.value>stepped)els.a.value=stepped}
+  function updateLabels(p){
+    const isSingle=simMode==='single',isMulti=simMode==='multi',lightLabel=p.white?'等能连续白光':'单色光：'+p.lambdas.length+' 种',modeName=isSingle?'单缝衍射':isMulti?'多缝干涉':'光栅衍射';
+    $('dOut').textContent=(p.d*1e6).toFixed(1)+' μm';$('aOut').textContent=(p.a*1e6).toFixed(1)+' μm';$('NOut').textContent=p.N;$('LOut').textContent=p.L.toFixed(2)+' m';
+    $('visualTitle').textContent='各波长'+modeName+'强度';$('modeLabel').textContent=modeName+' · '+lightLabel;
+    curve.setAttribute('aria-label',modeName+'归一化强度曲线');pattern.setAttribute('aria-label',modeName+'光屏图样');
+    $('DField').classList.toggle('mode-hidden',isSingle);els.d.disabled=isSingle;$('dLabel').innerHTML=isMulti?'缝间距 <i>d</i>':'光栅常数 <i>d</i>';$('AField').classList.toggle('mode-hidden',isMulti);els.a.disabled=isMulti;$('NField').classList.toggle('mode-hidden',isSingle);els.N.disabled=isSingle;$('LLabel').innerHTML=(isSingle?'单缝':isMulti?'多缝':'光栅')+'到光屏距离 <i>L</i>';
+    $('waveOptions').classList.toggle('disabled',p.white);$('waveOptions').querySelectorAll('.wave').forEach(b=>b.disabled=p.white);$('selectedCount').textContent=p.white?'等能连续光谱':selected.size+' 种';$('waveHint').textContent=p.white?'各波长入射强度相等；曲线显示 7 个代表波长，光斑使用 380–780 nm、5 nm 间隔积分。':'至少保留一种波长。曲线和光斑按所选波长共同显示。';
+    if(isSingle){$('statParamLabel').innerHTML='单缝宽度 <i>a</i>';$('statParam').textContent=(p.a*1e6).toFixed(2)+' μm';$('statParamNote').textContent='决定衍射包络宽度'}else if(isMulti){$('statParamLabel').innerHTML='光栅常数 <i>d</i>';$('statParam').textContent=(p.d*1e6).toFixed(2)+' μm';$('statParamNote').textContent='相邻缝的中心间距'}else{$('statParamLabel').innerHTML='单缝宽度 <i>a</i>';$('statParam').textContent=(p.a*1e6).toFixed(2)+' μm';$('statParamNote').innerHTML='自动满足 <i>a</i> &lt; <i>d</i>'}
+    const statsLambdas=p.white?[380,780]:p.lambdas,minL=Math.min(...statsLambdas),maxL=Math.max(...statsLambdas),edgeTheta=thetaAtScreen(screenHalfWidthMm,p),period=isSingle?p.a:p.d,features=statsLambdas.map(l=>featureAtFirstOrder(l,p,period)).filter(Boolean),featureX=features.map(q=>q.x),featureTheta=features.map(q=>q.theta*180/Math.PI),orderMax=floorOrder(period*Math.sin(edgeTheta)/(minL*1e-9)),orderMin=floorOrder(period*Math.sin(edgeTheta)/(maxL*1e-9)),outsideCount=featureX.filter(x=>x>screenHalfWidthMm+1e-9).length;
+    let firstNote='当前参数下不存在一级位置';if(features.length){const screenNote=outsideCount===features.length?'；超出当前光屏':outsideCount?'；部分波长超出当前光屏':'';if(features.length<statsLambdas.length)firstNote='仅部分波长存在一级位置'+screenNote;else if(statsLambdas.length===1)firstNote='𝜃₁ = '+featureTheta[0].toFixed(3)+'°'+screenNote;else firstNote=(p.white?'380–780 nm 对应范围':'由短波到长波')+screenNote}
+    $('statFirstLabel').textContent=isSingle?'一级暗纹位置':'一级主极大位置';$('statFirst').textContent=features.length?rangeText(featureX)+' mm':'不存在';$('statFirstX').textContent=firstNote;
+    if(isSingle){
+      $('statOrdersLabel').textContent='单侧最高暗纹级次';$('statOrders').innerHTML='<i>j</i><sub>max</sub> = '+(orderMin===orderMax?orderMax:orderMin+'–'+orderMax);$('statOrdersNote').textContent=orderMax===0?'光屏范围内没有暗纹':'按光屏边缘位置计算';
+      $('statRLabel').textContent='中央主极大宽度';$('statR').textContent=featureX.length?rangeText(featureX.map(x=>2*x))+' mm':'—';$('statRNote').textContent='两侧一级暗纹之间的距离';
+    }else{
+      const missing=[];if(simMode==='grating'){for(let k=1;k<=orderMax;k++){if(Math.abs(Math.sin(Math.PI*k*p.a/p.d))<1e-8)missing.push(k)}}$('statOrdersLabel').textContent='单侧最高理论级次';$('statOrders').innerHTML='<i>k</i><sub>max</sub> = '+(orderMin===orderMax?orderMax:orderMin+'–'+orderMax);$('statOrdersNote').textContent=orderMax===0?'光屏内只有中央零级':missing.length?'光屏范围内缺级：'+missing.map(k=>'±'+k).join('、'):'含中央零级，当前范围内无缺级';
+      $('statRLabel').innerHTML='一级分辨本领 <i>λ</i>/Δ<i>λ</i>';$('statR').textContent=p.N;$('statRNote').innerHTML='<i>R</i> = <i>kN</i>，取 <i>k</i> = 1';
     }
-
-    // ========== 光栅衍射光强公式 ==========
-    function intensity(theta, d, a, lam, N) {
-        const π = Math.PI;
-        let u = π * a * Math.sin(theta) / lam;
-        let v = π * d * Math.sin(theta) / lam;
-        let single = u === 0 ? 1 : (Math.sin(u)/u) ** 2;
-        let multi  = v === 0 ? N*N : (Math.sin(N*v)/Math.sin(v)) ** 2;
-        return single * multi;
-    }
-
-    // ========== 单缝衍射包络线 ==========
-    function envelope(theta, a, lam) {
-        const π = Math.PI;
-        let u = π * a * Math.sin(theta) / lam;
-        return u === 0 ? 1 : (Math.sin(u)/u) ** 2;
-    }
-
-    // ========== 绘制强度曲线 ==========
-    function drawCurve() {
-    const w = curve.width, h = curve.height;
-    ctxC.clearRect(0,0,w,h);
-
-    // 判断是否为白光
-    const isWhite = currentColor.r === 255 && currentColor.g === 255 && currentColor.b === 255;
-
-    if (isWhite) {
-        // 白光：七色叠加绘制
-        let allMaxI = 0;
-        sevenColors.forEach(color => {
-            const { d,a,lam,N } = getParams(color.lam);
-            for(let x=0; x<w; x++){
-                let t = thetaMin + (thetaMax-thetaMin)*x/w;
-                let i = intensity(t,d,a,lam,N);
-                if(i>allMaxI) allMaxI=i;
-            }
-        });
-        if(allMaxI===0) allMaxI=1;
-
-        // 先绘制包络线（虚线，在底层）
-        sevenColors.forEach(color => {
-            const { a, lam } = getParams(color.lam);
-            ctxC.strokeStyle = `rgba(${color.r},${color.g},${color.b},0.4)`;
-            ctxC.lineWidth = 1.5;
-            ctxC.setLineDash([5, 5]);
-            ctxC.beginPath();
-            for(let x=0; x<w; x++){
-                let t = thetaMin + (thetaMax-thetaMin)*x/w;
-                let env = envelope(t, a, lam) * (parseInt(NSlider.value) ** 2);
-                let y = h - 20 - (env/allMaxI)*(h-40);
-                x===0 ? ctxC.moveTo(x,y) : ctxC.lineTo(x,y);
-            }
-            ctxC.stroke();
-        });
-        ctxC.setLineDash([]);
-
-        sevenColors.forEach(color => {
-            const { d,a,lam,N } = getParams(color.lam);
-            let data = [];
-            for(let x=0; x<w; x++){
-                let t = thetaMin + (thetaMax-thetaMin)*x/w;
-                data.push(intensity(t,d,a,lam,N));
-            }
-
-            ctxC.strokeStyle = `rgb(${color.r},${color.g},${color.b})`;
-            ctxC.lineWidth = 2.6;
-            ctxC.beginPath();
-            for(let x=0; x<w; x++){
-                let y = h - 20 - (data[x]/allMaxI)*(h-40);
-                x===0 ? ctxC.moveTo(x,y) : ctxC.lineTo(x,y);
-            }
-            ctxC.stroke();
-        });
-    } else {
-        // 单色光原有逻辑
-        const { d,a,lam,N } = getParams();
-        let maxI = 0, data = [];
-        for(let x=0; x<w; x++){
-            let t = thetaMin + (thetaMax-thetaMin)*x/w;
-            let i = intensity(t,d,a,lam,N);
-            data.push(i);
-            if(i>maxI) maxI=i;
-        }
-        if(maxI===0) maxI=1;
-
-        // 绘制包络线（虚线，在底层）
-        ctxC.strokeStyle = `rgba(${currentColor.r},${currentColor.g},${currentColor.b},0.5)`;
-        ctxC.lineWidth = 1.5;
-        ctxC.setLineDash([6, 4]);
-        ctxC.beginPath();
-        for(let x=0; x<w; x++){
-            let t = thetaMin + (thetaMax-thetaMin)*x/w;
-            let env = envelope(t, a, lam) * (N * N);
-            let y = h - 20 - (env/maxI)*(h-40);
-            x===0 ? ctxC.moveTo(x,y) : ctxC.lineTo(x,y);
-        }
-        ctxC.stroke();
-        ctxC.setLineDash([]);
-
-        ctxC.strokeStyle = `rgb(${currentColor.r},${currentColor.g},${currentColor.b})`;
-        ctxC.lineWidth = 2.6;
-        ctxC.beginPath();
-        for(let x=0; x<w; x++){
-            let y = h - 20 - (data[x]/maxI)*(h-40);
-            x===0 ? ctxC.moveTo(x,y) : ctxC.lineTo(x,y);
-        }
-        ctxC.stroke();
-    }
-
-    // 中心线
-    ctxC.strokeStyle = '#333';
-    ctxC.lineWidth = 1;
-    ctxC.beginPath();
-    ctxC.moveTo(w/2, 0);
-    ctxC.lineTo(w/2, h);
-    ctxC.stroke();
-}
-
-    // ========== 绘制衍射光斑 ==========
-    function drawPattern() {
-    const w = pattern.width, h = pattern.height;
-    const img = ctxP.createImageData(w,h);
-
-    const isWhite = currentColor.r === 255 && currentColor.g === 255 && currentColor.b === 255;
-
-    if (isWhite) {
-        // 白光：七色光斑叠加
-        let allMaxI = 0;
-        const colorData = [];
-
-        sevenColors.forEach(color => {
-            const { d,a,lam,N } = getParams(color.lam);
-            let data = [];
-            for(let y=0; y<h; y++){
-                let t = thetaMin + (thetaMax-thetaMin)*y/h;
-                let i = intensity(t,d,a,lam,N);
-                data.push(i);
-                if(i>allMaxI) allMaxI=i;
-            }
-            colorData.push({ color, data });
-        });
-        if(allMaxI===0) allMaxI=1;
-
-        // 先涂黑
-        for(let i=0; i<img.data.length; i+=4) {
-            img.data[i]=0; img.data[i+1]=0; img.data[i+2]=0; img.data[i+3]=255;
-        }
-
-        // 叠加七色
-        colorData.forEach(({ color, data }) => {
-            for(let y=0; y<h; y++){
-                let f = Math.min(1, data[y]/allMaxI);
-                let r = color.r * f;
-                let g = color.g * f;
-                let b = color.b * f;
-                for(let x=0; x<w; x++){
-                    let idx = (y*w + x)*4;
-                    img.data[idx]   = Math.min(255, img.data[idx]   + r);
-                    img.data[idx+1] = Math.min(255, img.data[idx+1] + g);
-                    img.data[idx+2] = Math.min(255, img.data[idx+2] + b);
-                }
-            }
-        });
-    } else {
-        // 单色光原有逻辑
-        const { d,a,lam,N } = getParams();
-        let maxI = 0, data = [];
-        for(let y=0; y<h; y++){
-            let t = thetaMin + (thetaMax-thetaMin)*y/h;
-            let i = intensity(t,d,a,lam,N);
-            data.push(i);
-            if(i>maxI) maxI=i;
-        }
-        if(maxI===0) maxI=1;
-
-        for(let y=0; y<h; y++){
-            let f = Math.min(1, data[y]/maxI);
-            let r = currentColor.r * f;
-            let g = currentColor.g * f;
-            let b = currentColor.b * f;
-            for(let x=0; x<w; x++){
-                let idx = (y*w + x)*4;
-                img.data[idx] = r;
-                img.data[idx+1] = g;
-                img.data[idx+2] = b;
-                img.data[idx+3] = 255;
-            }
-        }
-    }
-
-    ctxP.putImageData(img,0,0);
-}
-
-    // ========== 刷新 ==========
-    function updateAll() {
-        dVal.textContent = dSlider.value;
-        aVal.textContent = aSlider.value;
-        NVal.textContent = NSlider.value;
-        drawCurve();
-        drawPattern();
-    }
-
-    // ========== 颜色按钮 ==========
-    document.querySelectorAll('.cbtn').forEach(btn => {
-        btn.onclick = () => {
-            document.querySelectorAll('.cbtn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentColor = {
-                r: +btn.dataset.r,
-                g: +btn.dataset.g,
-                b: +btn.dataset.b,
-                lam: +btn.dataset.lam
-            };
-            updateAll();
-        };
-    });
-
-    // ========== 滑块事件 ==========
-    dSlider.oninput = updateAll;
-    aSlider.oninput = updateAll;
-    NSlider.oninput = updateAll;
-
-    // 初始化
-    updateAll();
+    updateLegend(p)
+  }
+  function shuffled(values){const copy=[...values];for(let i=copy.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[copy[i],copy[j]]=[copy[j],copy[i]]}return copy}
+  function composeQuiz(){return shuffled(questionBank).slice(0,quizSize).map(item=>{const options=shuffled(item.options.map((html,index)=>({html,correct:index===item.answer})));return {question:item.question,options:options.map(option=>option.html),answer:options.findIndex(option=>option.correct),explanation:item.explanation}})}
+  function updateQuizProgress(){const answered=quizState.filter(state=>state.radios.some(radio=>radio.checked)).length;$('quizProgress').textContent='已作答 '+answered+'/'+quizQuestions.length;if($('quizResult').classList.contains('warning'))$('quizResult').hidden=true}
+  function buildQuiz(){const list=$('quizList'),result=$('quizResult');list.replaceChildren();quizState.length=0;quizQuestions=composeQuiz();quizQuestions.forEach((item,questionIndex)=>{const fieldset=document.createElement('fieldset'),legend=document.createElement('legend'),options=document.createElement('div'),explanation=document.createElement('p'),state={fieldset,radios:[],labels:[],notes:[],explanation};fieldset.className='quiz-item';legend.className='quiz-title';legend.innerHTML='<span class="quiz-number">'+String(questionIndex+1).padStart(2,'0')+'</span>'+item.question;options.className='quiz-options';item.options.forEach((option,optionIndex)=>{const label=document.createElement('label'),radio=document.createElement('input'),text=document.createElement('span'),note=document.createElement('span');label.className='quiz-option';radio.type='radio';radio.name='quiz-'+questionIndex;radio.value=optionIndex;text.innerHTML=option;note.className='answer-note';radio.addEventListener('change',()=>{fieldset.classList.toggle('unanswered',false);updateQuizProgress()});label.appendChild(radio);label.appendChild(text);label.appendChild(note);options.appendChild(label);state.radios.push(radio);state.labels.push(label);state.notes.push(note)});explanation.className='quiz-explanation';explanation.innerHTML='<strong>解析：</strong>'+item.explanation;explanation.hidden=true;fieldset.appendChild(legend);fieldset.appendChild(options);fieldset.appendChild(explanation);list.appendChild(fieldset);quizState.push(state)});result.hidden=true;result.className='quiz-result';updateQuizProgress()}
+  function gradeQuiz(event){event.preventDefault();const missing=quizState.filter(state=>!state.radios.some(radio=>radio.checked));quizState.forEach(state=>state.fieldset.classList.toggle('unanswered',!state.radios.some(radio=>radio.checked)));if(missing.length){const result=$('quizResult');result.className='quiz-result warning';result.innerHTML='<strong class="quiz-score">尚未完成</strong><p class="quiz-summary">还有 '+missing.length+' 题未作答，请完成后再提交评分。</p>';result.hidden=false;const firstRadio=missing[0].radios[0];if(typeof firstRadio.focus==='function')firstRadio.focus();return}let correct=0;quizState.forEach((state,questionIndex)=>{const item=quizQuestions[questionIndex],selectedIndex=state.radios.findIndex(radio=>radio.checked);if(selectedIndex===item.answer)correct++;state.radios.forEach((radio,optionIndex)=>{radio.disabled=true;const isCorrect=optionIndex===item.answer,isWrong=optionIndex===selectedIndex&&!isCorrect;state.labels[optionIndex].classList.toggle('correct',isCorrect);state.labels[optionIndex].classList.toggle('incorrect',isWrong);state.notes[optionIndex].textContent=isCorrect?'正确答案':isWrong?'你的答案':''});state.explanation.hidden=false});const score=correct/quizQuestions.length*100,scoreText=Number.isInteger(score)?score.toFixed(0):score.toFixed(1),level=correct===quizQuestions.length?'全部正确':correct>=6?'掌握良好':correct>=4?'基础合格':'建议结合仿真再次复习';const result=$('quizResult');result.className='quiz-result '+(correct>=4?'pass':'warning');result.innerHTML='<strong class="quiz-score">'+scoreText+' 分</strong><p class="quiz-summary">答对 '+correct+' / '+quizQuestions.length+' 题 · '+level+'</p>';result.hidden=false}
+  function resetQuiz(){quizState.forEach(state=>{state.fieldset.classList.toggle('unanswered',false);state.radios.forEach(radio=>{radio.checked=false;radio.disabled=false});state.labels.forEach(label=>{label.classList.toggle('correct',false);label.classList.toggle('incorrect',false)});state.notes.forEach(note=>note.textContent='');state.explanation.hidden=true});const result=$('quizResult');result.hidden=true;result.className='quiz-result';updateQuizProgress()}
+  function render(){renderPending=false;syncAConstraint();const p=params(),comps=curveData(p);updateLabels(p);drawCurve(p,comps);drawPattern(p)}function schedule(){if(!renderPending){renderPending=true;requestAnimationFrame(render)}}
+  function buildWaveButtons(){const box=$('waveOptions');monoPresets.forEach(l=>{const b=document.createElement('button');b.type='button';b.className='wave'+(selected.has(l)?' active':'');b.style.setProperty('--wave',rgbCss(l));b.textContent=l+' nm';b.setAttribute('aria-pressed',selected.has(l));b.onclick=()=>{if(selected.has(l)){if(selected.size===1)return;selected.delete(l)}else selected.add(l);b.classList.toggle('active',selected.has(l));b.setAttribute('aria-pressed',selected.has(l));schedule()};box.appendChild(b)})}
+  Object.values(els).forEach(el=>el.addEventListener('input',schedule));els.d.addEventListener('input',syncAConstraint);$('simTabs').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;simMode=e.target.dataset.mode;syncAConstraint();$('simTabs').querySelectorAll('button').forEach(b=>{const active=b===e.target;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active)});schedule()});$('exportCsv').onclick=()=>{const p=params(),comps=curveData(p,4001),head=['theta_rad','screen_x_mm',...comps.map(c=>'I_'+String(c.lam).replace('.','_')+'nm')],rows=[head.join(',')];for(let i=0;i<comps[0].points.length;i++)rows.push([comps[0].points[i].theta,comps[0].points[i].x,...comps.map(c=>c.points[i].I)].join(','));const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));const names={single:'single_slit_diffraction.csv',multi:'multi_slit_interference.csv',grating:'grating_diffraction.csv'};a.download=names[simMode];a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)};
+  $('quizForm').addEventListener('submit',gradeQuiz);$('resetQuiz').onclick=resetQuiz;$('newQuiz').onclick=buildQuiz;buildQuiz();buildWaveButtons();addEventListener('resize',schedule);if('ResizeObserver'in window)new ResizeObserver(schedule).observe(curve);schedule();
+})();
 </script>
 </body>
 </html>
