@@ -72,7 +72,7 @@
 (() => {
   'use strict';
   const $=id=>document.getElementById(id), curve=$('curve'),pattern=$('pattern'),cctx=curve.getContext('2d'),pctx=pattern.getContext('2d');
-  const AI_API_URL='https://REPLACE_WITH_YOUR_VERCEL_DOMAIN.vercel.app/api/chat';
+  const AI_API_URL='https://diffraction-grating.vercel.app/api/chat';
   const els={source:$('source'),d:$('d'),a:$('a'),N:$('N'),L:$('L')};
   const monoPresets=[405,450,488,532,589.3,632.8,650],whiteComponents=[400,450,500,550,600,650,700],whiteSpectrum=Array.from({length:81},(_,i)=>380+5*i);
   const selected=new Set([632.8]);const screenHalfWidthMm=150,plotFrame=Object.freeze({left:62,right:18});let simMode='grating',lastPhysicsMode='grating',renderPending=false;
